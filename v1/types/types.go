@@ -38,6 +38,7 @@ func NewRoute(id RouteID, stationList StationList) Route {
 type TrainID string
 
 type Train interface {
+	GetID() TrainID
 	GetCurrentStation(context.Context) (error, StationID)
 	GetRoute(context.Context) (error, Route)
 }
@@ -47,10 +48,6 @@ type TrainImpl struct {
 	route Route
 }
 
-func (t *TrainImpl) GetRoute(context.Context) (error, Route) {
-	return nil, t.route
-}
-
 func NewTrain(id TrainID, route Route) Train {
 	return &TrainImpl{
 		id:    id,
@@ -58,8 +55,16 @@ func NewTrain(id TrainID, route Route) Train {
 	}
 }
 
+func (t *TrainImpl) GetRoute(context.Context) (error, Route) {
+	return nil, t.route
+}
+
 func (t *TrainImpl) GetCurrentStation(context.Context) (error, StationID) {
 	return errors.New("not implemented"), ""
+}
+
+func (t *TrainImpl) GetID() TrainID {
+	return t.id
 }
 
 type SensorPingResponse interface {
