@@ -45,7 +45,7 @@ func Test_E2E(t *testing.T) {
 
 	// start the route
 
-	err = train.StartRoute(ctx)
+	err = train.StartRoute(ctx, GenerateRouteEvents)
 	require.NoError(t, err)
 
 	time.Sleep(100 * time.Millisecond)

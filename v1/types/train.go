@@ -6,34 +6,6 @@ import (
 )
 
 type StationID string
-type StationList []StationID
-
-type RouteID string
-
-type Route interface {
-	GetID(context.Context) RouteID
-	GetStationList(context.Context) (error, StationList)
-}
-
-type RouteImpl struct {
-	id          RouteID
-	stationList StationList
-}
-
-func (r *RouteImpl) GetStationList(context.Context) (error, StationList) {
-	return nil, r.stationList
-}
-
-func (r *RouteImpl) GetID(context.Context) RouteID {
-	return r.id
-}
-
-func NewRoute(id RouteID, stationList StationList) Route {
-	return &RouteImpl{
-		id:          id,
-		stationList: stationList,
-	}
-}
 
 type TrainID string
 
@@ -42,7 +14,7 @@ type Train interface {
 	GetEvents(context.Context) (error, []RouteEvent)
 	GetLastEvent(context.Context) (error, RouteEvent)
 	GetRoute(context.Context) (error, Route)
-	StartRoute(context.Context) error
+	StartRoute(context.Context, GetRouteEvents) error
 }
 
 type TrainStatus int64
@@ -88,11 +60,13 @@ func (t *TrainImpl) GetLastEvent(context.Context) (error, RouteEvent) {
 	return nil, t.events[len(t.events)-1]
 }
 
-func (t *TrainImpl) StartRoute(ctx context.Context) error {
+type GetRouteEvents func(ctx context.Context, route Route, period time.Duration) (error, chan (RouteEvent))
+
+func (t *TrainImpl) StartRoute(ctx context.Context, getRouteEvents GetRouteEvents) error {
 	t.routeContext, t.routeContextCancel = context.WithCancel(ctx)
 
 	// FIXME temporary solution
-	err, ch := GenerateRouteEvents(ctx, t.route, 1*time.Millisecond)
+	err, ch := getRouteEvents(ctx, t.route, 1*time.Millisecond)
 	if err != nil { // FIXME should wrap here
 		return err
 	}
@@ -118,12 +92,4 @@ func (t *TrainImpl) StartRoute(ctx context.Context) error {
 
 func (t *TrainImpl) GetID() TrainID {
 	return t.id
-}
-
-type SensorPingResponse interface {
-	GetStationID() StationID
-}
-
-type Sensor interface {
-	Ping(context.Context) (error, SensorPingResponse)
 }
