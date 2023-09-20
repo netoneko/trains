@@ -2,7 +2,7 @@ package types
 
 import (
 	"context"
-	"errors"
+	"time"
 )
 
 type StationID string
@@ -39,10 +39,10 @@ type TrainID string
 
 type Train interface {
 	GetID() TrainID
-	GetCurrentStation(context.Context) (error, StationID)
+	GetEvents(context.Context) (error, []RouteEvent)
+	GetLastEvent(context.Context) (error, RouteEvent)
 	GetRoute(context.Context) (error, Route)
 	StartRoute(context.Context) error
-	GetStatus() TrainStatus
 }
 
 type TrainStatus int64
@@ -57,11 +57,9 @@ const (
 )
 
 type TrainImpl struct {
-	id    TrainID
-	route Route
-
-	status  TrainStatus
-	station StationID
+	id     TrainID
+	route  Route
+	events []RouteEvent
 
 	routeContext       context.Context
 	routeContextCancel context.CancelFunc
@@ -71,6 +69,10 @@ func NewTrain(id TrainID, route Route) Train {
 	return &TrainImpl{
 		id:    id,
 		route: route,
+		events: []RouteEvent{{
+			Status:  Stopped,
+			Station: "",
+		}},
 	}
 }
 
@@ -78,32 +80,40 @@ func (t *TrainImpl) GetRoute(context.Context) (error, Route) {
 	return nil, t.route
 }
 
-func (t *TrainImpl) GetCurrentStation(context.Context) (error, StationID) {
-	if t.station == "" {
-		return errors.New("unknown location"), ""
-	}
+func (t *TrainImpl) GetEvents(context.Context) (error, []RouteEvent) {
+	return nil, t.events
+}
 
-	switch t.status {
-	case Stopped:
-		return nil, t.station
-	}
-
-	return errors.New("not implemented"), ""
+func (t *TrainImpl) GetLastEvent(context.Context) (error, RouteEvent) {
+	return nil, t.events[len(t.events)-1]
 }
 
 func (t *TrainImpl) StartRoute(ctx context.Context) error {
 	t.routeContext, t.routeContextCancel = context.WithCancel(ctx)
 
-	go func(routeContext context.Context, routeContextCancel context.CancelFunc) {
+	// FIXME temporary solution
+	err, ch := GenerateRouteEvents(ctx, t.route, 1*time.Millisecond)
+	if err != nil { // FIXME should wrap here
+		return err
+	}
 
+	go func(routeContext context.Context, routeContextCancel context.CancelFunc) {
+		for loop := true; loop; {
+			select {
+			case e, ok := <-ch:
+				if !ok {
+					loop = false
+					break
+				}
+				t.events = append(t.events, e)
+			case <-ctx.Done():
+				loop = false
+				break
+			}
+		}
 	}(t.routeContext, t.routeContextCancel)
 
-	// return errors.New("not implemented")
 	return nil
-}
-
-func (t *TrainImpl) GetStatus() TrainStatus {
-	return t.status
 }
 
 func (t *TrainImpl) GetID() TrainID {

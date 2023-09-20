@@ -2,6 +2,7 @@ package test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -31,19 +32,34 @@ func Test_E2E(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, r3, trainRoute)
 
-	err, _ = train.GetCurrentStation(ctx)
-	require.EqualError(t, err, "unknown location")
-	require.EqualValues(t, types.Stopped, train.GetStatus())
+	err, events := train.GetEvents(ctx)
+	require.NoError(t, err)
+	require.Len(t, events, 1)
+
+	err, lastEvent := train.GetLastEvent(ctx)
+	require.NoError(t, err)
+	require.EqualValues(t, types.RouteEvent{
+		Status:  types.Stopped,
+		Station: "",
+	}, lastEvent)
 
 	// start the route
 
 	err = train.StartRoute(ctx)
 	require.NoError(t, err)
-	require.EqualValues(t, types.Arriving, train.GetStatus())
 
-	time.Sleep(20 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
-	err, currentStation := train.GetCurrentStation(ctx)
+	err, events = train.GetEvents(ctx)
 	require.NoError(t, err)
-	require.EqualValues(t, "Bialik", currentStation)
+	require.NotEmpty(t, events)
+
+	fmt.Println(events)
+
+	err, lastEvent = train.GetLastEvent(ctx)
+	require.NoError(t, err)
+	require.EqualValues(t, types.RouteEvent{
+		Status:  types.Departing,
+		Station: "Karlebach",
+	}, lastEvent)
 }
