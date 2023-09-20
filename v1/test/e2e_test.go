@@ -41,6 +41,8 @@ func Test_E2E(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, types.Arriving, train.GetStatus())
 
+	time.Sleep(20 * time.Millisecond)
+
 	err, currentStation := train.GetCurrentStation(ctx)
 	require.NoError(t, err)
 	require.EqualValues(t, "Arlozoroff", currentStation)
