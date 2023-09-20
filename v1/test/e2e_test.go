@@ -14,7 +14,7 @@ func Test_E2E(t *testing.T) {
 	defer cancel()
 
 	stations := []types.StationID{
-		"Arlozoroff", "Abba Hillel", "Bialik", "Sha'ul HaMelech", "Yehudit", "Karlebach",
+		"Bialik", "Abba Hillel", "Arlozoroff", "Sha'ul HaMelech", "Yehudit", "Karlebach",
 	}
 	r3 := types.NewRoute("R3", stations)
 
@@ -45,5 +45,5 @@ func Test_E2E(t *testing.T) {
 
 	err, currentStation := train.GetCurrentStation(ctx)
 	require.NoError(t, err)
-	require.EqualValues(t, "Arlozoroff", currentStation)
+	require.EqualValues(t, "Bialik", currentStation)
 }

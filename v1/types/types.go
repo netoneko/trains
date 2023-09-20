@@ -49,10 +49,11 @@ type TrainStatus int64
 
 const (
 	Stopped TrainStatus = iota
-	Departing
 	EnRoute
 	// Delayed FIXME implement later
 	Arriving
+	Waiting
+	Departing
 )
 
 type TrainImpl struct {
