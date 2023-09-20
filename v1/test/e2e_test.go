@@ -15,7 +15,7 @@ func Test_E2E(t *testing.T) {
 	stations := []types.StationID{
 		"Arlozoroff", "Abba Hillel", "Bialik", "Sha'ul HaMelech", "Yehudit", "Karlebach",
 	}
-	route := types.NewRoute(stations)
+	route := types.NewRoute("R3", stations)
 
 	err, stationList := route.GetStationList(ctx)
 
