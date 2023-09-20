@@ -32,5 +32,16 @@ func Test_E2E(t *testing.T) {
 	require.EqualValues(t, r3, trainRoute)
 
 	err, _ = train.GetCurrentStation(ctx)
-	require.EqualError(t, err, "not implemented")
+	require.EqualError(t, err, "unknown location")
+	require.EqualValues(t, types.Stopped, train.GetStatus())
+
+	// start the route
+
+	err = train.StartRoute(ctx)
+	require.NoError(t, err)
+	require.EqualValues(t, types.Arriving, train.GetStatus())
+
+	err, currentStation := train.GetCurrentStation(ctx)
+	require.NoError(t, err)
+	require.EqualValues(t, "Arlozoroff", currentStation)
 }

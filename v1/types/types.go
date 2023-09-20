@@ -41,11 +41,29 @@ type Train interface {
 	GetID() TrainID
 	GetCurrentStation(context.Context) (error, StationID)
 	GetRoute(context.Context) (error, Route)
+	StartRoute(context.Context) error
+	GetStatus() TrainStatus
 }
+
+type TrainStatus int64
+
+const (
+	Stopped TrainStatus = iota
+	Departing
+	EnRoute
+	// Delayed FIXME implement later
+	Arriving
+)
 
 type TrainImpl struct {
 	id    TrainID
 	route Route
+
+	status  TrainStatus
+	station StationID
+
+	routeContext       context.Context
+	routeContextCancel context.CancelFunc
 }
 
 func NewTrain(id TrainID, route Route) Train {
@@ -60,7 +78,31 @@ func (t *TrainImpl) GetRoute(context.Context) (error, Route) {
 }
 
 func (t *TrainImpl) GetCurrentStation(context.Context) (error, StationID) {
+	if t.station == "" {
+		return errors.New("unknown location"), ""
+	}
+
+	switch t.status {
+	case Stopped:
+		return nil, t.station
+	}
+
 	return errors.New("not implemented"), ""
+}
+
+func (t *TrainImpl) StartRoute(ctx context.Context) error {
+	t.routeContext, t.routeContextCancel = context.WithCancel(ctx)
+
+	go func(routeContext context.Context, routeContextCancel context.CancelFunc) {
+
+	}(t.routeContext, t.routeContextCancel)
+
+	// return errors.New("not implemented")
+	return nil
+}
+
+func (t *TrainImpl) GetStatus() TrainStatus {
+	return t.status
 }
 
 func (t *TrainImpl) GetID() TrainID {
